@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventbrite CSV Download</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --page-bg: #f7faf9;
+            --ink: #10231f;
+            --muted: #5e706a;
+            --line: #dbe6e1;
+            --panel: #ffffff;
+            --field: #f8fbfa;
+            --accent: #007f68;
+            --accent-dark: #005545;
+            --hot: #c53d2f;
+            --ring: rgba(0, 127, 104, 0.16);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        .is-hidden {
+            display: none !important;
+        }
+
+        html,
+        body {
+            width: 100%;
+            min-height: 100%;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            background:
+                linear-gradient(90deg, rgba(16, 35, 31, 0.045) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(16, 35, 31, 0.045) 1px, transparent 1px),
+                var(--page-bg);
+            background-size: 36px 36px;
+            color: var(--ink);
+        }
+
+        .page-shell {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 0 20px 28px;
+            overflow: visible;
+        }
+
+        .eventbrite-link {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .eventbrite-link:hover,
+        .eventbrite-link:focus {
+            color: var(--hot);
+            text-decoration: underline;
+            text-underline-offset: 5px;
+        }
+
+        .form-card {
+            position: relative;
+            top: 0;
+            z-index: 20;
+            flex: 0 0 auto;
+            width: 100%;
+            max-width: 1320px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: minmax(260px, 0.34fr) minmax(760px, 1.66fr);
+            min-height: 200px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: 0 18px 42px rgba(16, 35, 31, 0.14);
+            overflow: hidden;
+        }
+
+        .hero-band {
+            position: relative;
+            min-height: 100%;
+            padding: 18px 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: #10231f;
+            color: #fff;
+            isolation: isolate;
+        }
+
+        .hero-band::after {
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            content: "";
+            background:
+                linear-gradient(180deg, rgba(16, 35, 31, 0.12), rgba(16, 35, 31, 0.88)),
+                linear-gradient(90deg, rgba(0, 127, 104, 0.24), transparent 55%);
+        }
+
+        .hero-band img {
+            position: absolute;
+            inset: 0;
+            z-index: -2;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: saturate(0.88) contrast(1.08);
+        }
+
+        .hero-band h1 {
+            margin: 0 0 8px;
+            max-width: 360px;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 1.68rem;
+            line-height: 1;
+            font-weight: 700;
+            letter-spacing: 0;
+        }
+
+        .hero-band p {
+            margin: 0;
+            max-width: 370px;
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 0.86rem;
+            line-height: 1.42;
+        }
+
+        .eyebrow {
+            width: fit-content;
+            margin-bottom: 10px;
+            padding: 5px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.36);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .form-body {
+            min-width: 0;
+            padding: 12px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
+        }
+
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #1a2b27;
+            font-size: 0.86rem;
+            letter-spacing: 0.03em;
+        }
+
+        .form-control,
+        .form-check-input {
+            border-radius: 8px;
+        }
+
+        .form-control {
+            border: 1px solid var(--line);
+            background: var(--field);
+            padding: 8px 11px;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .form-control:focus,
+        .form-check-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 0.25rem var(--ring);
+        }
+
+        .option-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            border-radius: 8px;
+            align-items: stretch;
+        }
+
+        .form-check {
+            min-width: 0;
+            min-height: 92px;
+            margin: 0;
+            position: relative;
+            padding: 12px 12px 12px 42px;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            background: var(--field);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .form-check-input {
+            position: absolute;
+            left: 12px;
+            top: 13px;
+            margin: 0;
+            width: 18px;
+            height: 18px;
+            opacity: 1;
+            z-index: 2;
+            cursor: pointer;
+            appearance: none;
+            background: #fff;
+            border: 1px solid #b8c7c1;
+            box-shadow: inset 0 0 0 4px #fff;
+        }
+
+        .form-check-input:checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .form-check:has(.form-check-input:checked) {
+            border-color: rgba(0, 124, 104, 0.5);
+            background: #eef9f5;
+            box-shadow: inset 0 0 0 1px rgba(0, 124, 104, 0.18);
+        }
+
+        .form-check-label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.92rem;
+            color: var(--ink);
+            cursor: pointer;
+            line-height: 1.3;
+        }
+
+        .field-note {
+            display: block;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 0.75rem;
+            color: var(--muted);
+            line-height: 1.45;
+            margin-top: 6px;
+            pointer-events: none;
+        }
+
+        .range-fields {
+            display: flex;
+            grid-column: 1 / -1;
+            grid-row: 2;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .single-event-field,
+        .import-file-field,
+        .single-page-fields {
+            display: none;
+            grid-column: 1 / -1;
+        }
+
+        .single-event-field,
+        .import-file-field {
+            display: block;
+            grid-row: 2;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .single-page-fields {
+            display: flex;
+            grid-row: 2;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .single-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .single-event-url-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .single-url-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-add-url,
+        .btn-remove-url {
+            border-radius: 8px;
+            font-family: "Segoe UI", sans-serif;
+            font-weight: 700;
+        }
+
+        .btn-add-url {
+            border: 1px solid rgba(0, 127, 104, 0.28);
+            background: rgba(0, 127, 104, 0.08);
+            color: var(--accent-dark);
+            padding: 10px 14px;
+        }
+
+        .btn-remove-url {
+            border: 1px solid rgba(197, 61, 47, 0.18);
+            background: rgba(197, 61, 47, 0.08);
+            color: var(--hot);
+            min-width: 44px;
+            height: 42px;
+        }
+
+        .btn-download,
+        .btn-view-data,
+        .btn-single-download {
+            background: var(--accent);
+            color: #fff;
+            border: 0;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-family: "Segoe UI", sans-serif;
+            font-weight: 700;
+            min-width: 168px;
+            box-shadow: 0 12px 24px rgba(0, 127, 104, 0.2);
+            transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+        }
+
+        .btn-download:hover,
+        .btn-view-data:hover,
+        .btn-single-download:hover {
+            color: #fff;
+            transform: translateY(-1px);
+            background: var(--accent-dark);
+        }
+
+        .btn-view-data,
+        .btn-single-download {
+            min-width: 138px;
+            padding: 10px 18px;
+            font-size: 0.92rem;
+        }
+
+        .status-box {
+            display: none;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-family: "Segoe UI", sans-serif;
+            font-weight: 500;
+            line-height: 1.45;
+        }
+
+        .status-box.success {
+            display: block;
+            background: rgba(34, 197, 94, 0.12);
+            color: #166534;
+        }
+
+        .status-box.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.12);
+            color: #991b1b;
+        }
+
+        .summary-card {
+            display: none;
+            max-height: 104px;
+            overflow: hidden;
+            border-radius: 8px;
+            background: #fff;
+            border: 1px solid var(--line);
+            padding: 10px 12px;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 0.88rem;
+            box-shadow: 0 10px 24px rgba(16, 35, 31, 0.06);
+        }
+
+        .summary-card strong {
+            color: var(--accent-dark);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px 14px;
+        }
+
+        .summary-grid .wide {
+            grid-column: 1 / -1;
+        }
+
+        .summary-path {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .progress-shell {
+            display: none;
+        }
+
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .progress-count {
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .progress {
+            height: 10px;
+            border-radius: 8px;
+            background: rgba(94, 112, 106, 0.18);
+        }
+
+        .progress-bar {
+            background: var(--hot);
+            transition: width 0.35s ease;
+        }
+
+        #downloadForm {
+            width: 100%;
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px 12px;
+            align-items: start;
+        }
+
+        #downloadForm > .col-12 {
+            width: auto;
+            max-width: none;
+            padding: 0;
+        }
+
+        #pageSelectionField,
+        #statusBox,
+        #progressShell,
+        #summaryCard,
+        #mainDownloadRow {
+            grid-column: 1 / -1;
+        }
+
+        .data-area {
+            width: 100%;
+            max-width: 1320px;
+            margin: 0 auto;
+            display: grid;
+            gap: 16px;
+            flex: 0 0 auto;
+            min-height: 0;
+            overflow: visible;
+        }
+
+        .single-result {
+            display: none;
+            width: 100%;
+            min-height: 0;
+            max-height: none;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fff;
+            overflow: hidden;
+            box-shadow: 0 16px 38px rgba(16, 35, 31, 0.09);
+        }
+
+        .single-result[style*="block"] {
+            display: flex !important;
+            flex-direction: column;
+        }
+
+        .single-result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin: 0;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+            background: #fbfdfc;
+        }
+
+        .single-result-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .single-table-wrap {
+            flex: 1 1 auto;
+            overflow: auto;
+            max-height: none;
+            min-height: 0;
+            padding: 0;
+        }
+
+        .single-result table {
+            display: table;
+            width: 100%;
+            min-width: 0;
+            margin: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 0.74rem;
+        }
+
+        .single-result th,
+        .single-result td {
+            min-width: 0;
+            max-width: none;
+            padding: 9px 8px;
+            border-right: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+            overflow-wrap: anywhere;
+        }
+
+        .single-result th {
+            color: var(--accent-dark);
+            background: #f1f7f5;
+            font-weight: 700;
+            white-space: normal;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .single-result td {
+            max-height: 92px;
+            background: #fff;
+        }
+
+        .single-result tbody tr:nth-child(even) td {
+            background: #fbfdfc;
+        }
+
+        .single-result th:last-child,
+        .single-result td:last-child {
+            border-right: 0;
+        }
+
+        .single-result td.description-cell {
+            min-width: 0;
+            max-width: none;
+        }
+
+        .single-result .cell-scroll {
+            max-height: 84px;
+            overflow: hidden;
+            line-height: 1.45;
+        }
+
+        .single-result td.description-cell .cell-scroll,
+        .single-result td.url-cell .cell-scroll {
+            overflow: auto;
+        }
+
+        .record-list {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 14px;
+        }
+
+        .record-card {
+            min-width: 0;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 10px 24px rgba(16, 35, 31, 0.06);
+            overflow: hidden;
+        }
+
+        .record-card-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+            background: #f4faf7;
+        }
+
+        .record-card-title {
+            margin: 0;
+            font-size: 1rem;
+            line-height: 1.35;
+            font-weight: 800;
+            color: var(--ink);
+        }
+
+        .record-fields {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0;
+        }
+
+        .record-field {
+            min-width: 0;
+            padding: 12px 14px;
+            border-right: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .record-field:nth-child(even) {
+            border-right: 0;
+        }
+
+        .record-field.wide {
+            grid-column: 1 / -1;
+            border-right: 0;
+        }
+
+        .record-label {
+            margin-bottom: 5px;
+            color: var(--muted);
+            font-family: "Segoe UI", sans-serif;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .data-link {
+            color: var(--accent-dark);
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .image-link {
+            display: inline-flex;
+            flex-direction: column;
+            gap: 6px;
+            color: var(--accent-dark);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .image-link:hover,
+        .image-link:focus {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .event-thumb {
+            width: 72px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            background: var(--field);
+        }
+
+        .result-pagination {
+            display: none;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 12px 16px;
+            border-top: 1px solid var(--line);
+            background: #fbfdfc;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        .pagination-button {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 7px 12px;
+            background: #fff;
+            color: var(--ink);
+            font-weight: 700;
+        }
+
+        .pagination-button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            color: var(--muted);
+            font-weight: 700;
+            min-width: 110px;
+            text-align: center;
+        }
+
+        @media (max-width: 1100px) {
+            .form-card {
+                grid-template-columns: 1fr;
+                position: relative;
+                top: 0;
+            }
+
+            #downloadForm {
+                grid-template-columns: 1fr;
+            }
+
+            #pageSelectionField,
+            #csvFileField,
+            #cityFilterField,
+            #mainDownloadRow {
+                grid-column: 1;
+                grid-row: auto;
+            }
+
+            .hero-band {
+                min-height: 120px;
+            }
+
+            .single-table-wrap {
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 860px) {
+            html,
+            body {
+                overflow-x: hidden;
+                overflow-y: auto;
+            }
+
+            .page-shell {
+                min-height: 100vh;
+                padding: 12px;
+            }
+
+            .form-card {
+                max-height: none;
+                grid-template-columns: 1fr;
+            }
+
+            .hero-band {
+                min-height: 150px;
+            }
+
+            .single-table-wrap {
+                max-height: none;
+            }
+
+            .record-list,
+            .record-fields {
+                grid-template-columns: 1fr;
+            }
+
+            .record-field {
+                border-right: 0;
+            }
+
+            .single-url-row {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-remove-url {
+                width: 100%;
+            }
+
+        }
+
+        @media (max-width: 576px) {
+            .form-body,
+            .hero-band {
+                padding: 20px;
+            }
+
+            .hero-band h1 {
+                font-size: 2rem;
+            }
+
+            .option-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+        <div class="form-card">
+            <div class="hero-band">
+                <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80" alt="">
+                <div>
+                    <div class="eyebrow">CSV Export</div>
+                    <h1><a class="eventbrite-link" href="https://www.eventbrite.com/d/az--phoenix/all-events/" target="_blank" rel="noopener noreferrer">Eventbrite Phoenix Events</a></h1>
+                </div>
+                <p>Choose page scraping, single URL preview, or import an Excel file with Eventbrite URLs.</p>
+            </div>
+
+            <div class="form-body">
+                <form id="downloadForm" class="row g-3" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div id="csvFileField" class="col-12">
+                        <label for="csvFileName" class="form-label">CSV File Name</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="csvFileName"
+                            name="csv_file_name"
+                            placeholder="Enter CSV file name"
+                            required
+                        >
+                    </div>
+
+                    <div id="cityFilterField" class="col-12">
+                        <label for="cityName" class="form-label">City Filter</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="cityName"
+                            name="city_name"
+                            placeholder="Optional, e.g. Phoenix"
+                        >
+                    </div>
+
+                    <div id="pageSelectionField" class="col-12">
+                        <label class="form-label d-block">Page Selection</label>
+                        <div class="option-panel">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="page_option" id="allPages" value="all" checked>
+                                <label class="form-check-label" for="allPages">All Pages</label>
+                                <span class="field-note">Download every available event.</span>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="page_option" id="customPages" value="custom">
+                                <label class="form-check-label" for="customPages">Custom Range</label>
+                                <span class="field-note">Choose starting and ending pages.</span>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="page_option" id="singleEvent" value="single_event">
+                                <label class="form-check-label" for="singleEvent">Single Event</label>
+                                <span class="field-note">Enter one event URL and preview the extracted data.</span>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="page_option" id="singlePageEvents" value="single_page">
+                                <label class="form-check-label" for="singlePageEvents">Single Page</label>
+                                <span class="field-note">Choose event positions on one page.</span>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="page_option" id="importFile" value="import_file">
+                                <label class="form-check-label" for="importFile">Import File</label>
+                                <span class="field-note">Upload .xlsx or .csv with an Event URL column and generate a new file.</span>
+                            </div>
+
+                            <div id="rangeFields" class="range-fields row g-3">
+                                <div class="col-md-6">
+                                    <label for="startPage" class="form-label">Starting Page</label>
+                                    <input type="number" min="1" class="form-control" id="startPage" name="start_page" placeholder="e.g. 1">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="endPage" class="form-label">Ending Page</label>
+                                    <input type="number" min="1" class="form-control" id="endPage" name="end_page" placeholder="e.g. 10">
+                                </div>
+                            </div>
+
+                            <div id="singlePageFields" class="single-page-fields row g-3">
+                                <div class="col-md-4">
+                                    <label for="singlePageNumber" class="form-label">Page Number</label>
+                                    <input type="number" min="1" class="form-control" id="singlePageNumber" name="single_page" placeholder="e.g. 2">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="eventStart" class="form-label">Starting Event</label>
+                                    <input type="number" min="1" class="form-control" id="eventStart" name="event_start" placeholder="Default 1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="eventEnd" class="form-label">Ending Event</label>
+                                    <input type="number" min="1" class="form-control" id="eventEnd" name="event_end" placeholder="Default last event">
+                                </div>
+                            </div>
+
+                            <div id="singleEventField" class="single-event-field">
+                                <label for="singleEventUrl" class="form-label">Single Event URL</label>
+                                <div id="singleEventUrlList" class="single-event-url-list">
+                                    <div class="single-url-row">
+                                        <input
+                                            type="url"
+                                            class="form-control single-event-url-input"
+                                            id="singleEventUrl"
+                                            name="single_event_url"
+                                            placeholder="Paste one Eventbrite event URL"
+                                        >
+                                    </div>
+                                </div>
+                                <div class="single-actions">
+                                    <button type="button" id="addSingleEventUrlButton" class="btn btn-add-url">Add More URL</button>
+                                    <button type="button" id="viewSingleEventButton" class="btn btn-view-data">View Data</button>
+                                </div>
+                            </div>
+
+                            <div id="importFileField" class="import-file-field">
+                                <label for="eventFile" class="form-label">Excel or CSV File</label>
+                                <input
+                                    type="file"
+                                    class="form-control"
+                                    id="eventFile"
+                                    name="event_file"
+                                    accept=".xlsx,.csv"
+                                >
+                                <div class="field-note">Use the first sheet and include a column named Event URL.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div id="statusBox" class="status-box"></div>
+                    </div>
+
+                    <div class="col-12">
+                        <div id="progressShell" class="progress-shell">
+                            <div class="progress-meta">
+                                <span class="fw-semibold">Progress</span>
+                                <div class="d-flex gap-3">
+                                    <span id="progressCount" class="progress-count">0/0</span>
+                                    <span id="progressText">0%</span>
+                                </div>
+                            </div>
+                            <div class="progress">
+                                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div id="summaryCard" class="summary-card"></div>
+                    </div>
+
+                    <div id="mainDownloadRow" class="col-12 d-flex justify-content-start">
+                        <button type="submit" id="submitButton" class="btn btn-download">Download CSV</button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+        <section class="data-area" aria-label="Fetched event records">
+            <div id="singleEventResult" class="single-result">
+                <div class="single-result-header">
+                    <h2 class="single-result-title">Single Event Data</h2>
+                    <button type="button" id="downloadSingleEventButton" class="btn btn-single-download">Download CSV</button>
+                </div>
+                <div class="single-table-wrap">
+                    <table>
+                        <thead id="singleEventTableHead"></thead>
+                        <tbody id="singleEventTableBody"></tbody>
+                    </table>
+                    <div id="singleEventCards" class="record-list"></div>
+                </div>
+            </div>
+            <div id="downloadResult" class="single-result">
+                <div class="single-result-header">
+                    <h2 class="single-result-title">Fetched Event Rows</h2>
+                </div>
+                <div class="single-table-wrap">
+                    <table>
+                        <thead id="downloadTableHead"></thead>
+                        <tbody id="downloadTableBody"></tbody>
+                    </table>
+                    <div id="downloadCards" class="record-list"></div>
+                </div>
+                <div id="downloadPagination" class="result-pagination">
+                    <button type="button" id="downloadPrevPage" class="pagination-button">Previous</button>
+                    <span id="downloadPageInfo" class="pagination-info">Page 1 of 1</span>
+                    <button type="button" id="downloadNextPage" class="pagination-button">Next</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const form = document.getElementById('downloadForm');
+        const csvFileName = document.getElementById('csvFileName');
+        const allPages = document.getElementById('allPages');
+        const customPages = document.getElementById('customPages');
+        const singleEvent = document.getElementById('singleEvent');
+        const singlePageEvents = document.getElementById('singlePageEvents');
+        const importFile = document.getElementById('importFile');
+        const cityName = document.getElementById('cityName');
+        const rangeFields = document.getElementById('rangeFields');
+        const singlePageFields = document.getElementById('singlePageFields');
+        const singleEventField = document.getElementById('singleEventField');
+        const importFileField = document.getElementById('importFileField');
+        const eventFile = document.getElementById('eventFile');
+        const singleEventUrlList = document.getElementById('singleEventUrlList');
+        const singleEventUrl = document.getElementById('singleEventUrl');
+        const singlePageNumber = document.getElementById('singlePageNumber');
+        const eventStart = document.getElementById('eventStart');
+        const eventEnd = document.getElementById('eventEnd');
+        const addSingleEventUrlButton = document.getElementById('addSingleEventUrlButton');
+        const viewSingleEventButton = document.getElementById('viewSingleEventButton');
+        const downloadSingleEventButton = document.getElementById('downloadSingleEventButton');
+        const singleEventResult = document.getElementById('singleEventResult');
+        const singleEventTableHead = document.getElementById('singleEventTableHead');
+        const singleEventTableBody = document.getElementById('singleEventTableBody');
+        const singleEventCards = document.getElementById('singleEventCards');
+        const downloadResult = document.getElementById('downloadResult');
+        const downloadTableHead = document.getElementById('downloadTableHead');
+        const downloadTableBody = document.getElementById('downloadTableBody');
+        const downloadCards = document.getElementById('downloadCards');
+        const downloadPagination = document.getElementById('downloadPagination');
+        const downloadPrevPage = document.getElementById('downloadPrevPage');
+        const downloadNextPage = document.getElementById('downloadNextPage');
+        const downloadPageInfo = document.getElementById('downloadPageInfo');
+        const startPage = document.getElementById('startPage');
+        const endPage = document.getElementById('endPage');
+        const statusBox = document.getElementById('statusBox');
+        const summaryCard = document.getElementById('summaryCard');
+        const submitButton = document.getElementById('submitButton');
+        const mainDownloadRow = document.getElementById('mainDownloadRow');
+        const progressShell = document.getElementById('progressShell');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressCount = document.getElementById('progressCount');
+        const progressUrlTemplate = "{% url 'download_progress' '__JOB_ID__' %}";
+        const singleEventUrlEndpoint = "{% url 'single_event_data' %}";
+        const singleEventFields = [
+            'Event Name',
+            'Event Description',
+            'Event Image',
+            'Event Date',
+            'Event Time',
+            'Event End Date',
+            'Event End Time',
+            'Place',
+            'Street',
+            'City',
+            'State',
+            'Pincode',
+            'Event URL'
+        ];
+        const downloadPageSize = 10;
+        let currentSingleEventRows = [];
+        let downloadRows = [];
+        let downloadPage = 1;
+        let pollTimer;
+
+        function getSingleEventUrlInputs() {
+            return Array.from(singleEventUrlList.querySelectorAll('.single-event-url-input'));
+        }
+
+        function syncSingleEventInputState() {
+            const urlInputs = getSingleEventUrlInputs();
+
+            urlInputs.forEach(function (input, index) {
+                input.required = singleEvent.checked && index === 0;
+            });
+
+            singleEventUrlList.querySelectorAll('.btn-remove-url').forEach(function (button) {
+                button.hidden = urlInputs.length === 1;
+            });
+        }
+
+        function addSingleEventUrlRow(value = '') {
+            const row = document.createElement('div');
+            const input = document.createElement('input');
+            const removeButton = document.createElement('button');
+
+            row.className = 'single-url-row';
+
+            input.type = 'url';
+            input.className = 'form-control single-event-url-input';
+            input.name = 'single_event_url';
+            input.placeholder = 'Paste one Eventbrite event URL';
+            input.value = value;
+
+            removeButton.type = 'button';
+            removeButton.className = 'btn btn-remove-url';
+            removeButton.textContent = 'X';
+            removeButton.setAttribute('aria-label', 'Remove URL');
+            removeButton.addEventListener('click', function () {
+                row.remove();
+                syncSingleEventInputState();
+            });
+
+            row.appendChild(input);
+            row.appendChild(removeButton);
+            singleEventUrlList.appendChild(row);
+            syncSingleEventInputState();
+            return input;
+        }
+
+        function resetSingleEventInputs() {
+            singleEventUrlList.innerHTML = `
+                <div class="single-url-row">
+                    <input
+                        type="url"
+                        class="form-control single-event-url-input"
+                        id="singleEventUrl"
+                        name="single_event_url"
+                        placeholder="Paste one Eventbrite event URL"
+                    >
+                </div>
+            `;
+            syncSingleEventInputState();
+        }
+
+        function getEnteredSingleEventUrls() {
+            return getSingleEventUrlInputs()
+                .map(function (input) {
+                    return input.value.trim();
+                })
+                .filter(Boolean);
+        }
+
+        function toggleRangeFields() {
+            const isCustom = customPages.checked;
+            const isSingleEvent = singleEvent.checked;
+            const isSinglePage = singlePageEvents.checked;
+            const isImportFile = importFile.checked;
+            csvFileName.closest('.col-12').style.visibility = isSingleEvent ? 'hidden' : 'visible';
+            csvFileName.closest('.col-12').style.opacity = isSingleEvent ? '0' : '1';
+            csvFileName.closest('.col-12').style.pointerEvents = isSingleEvent ? 'none' : 'auto';
+            cityName.closest('.col-12').style.visibility = isSingleEvent || isImportFile ? 'hidden' : 'visible';
+            cityName.closest('.col-12').style.opacity = isSingleEvent || isImportFile ? '0' : '1';
+            cityName.closest('.col-12').style.pointerEvents = isSingleEvent || isImportFile ? 'none' : 'auto';
+            rangeFields.style.visibility = isCustom ? 'visible' : 'hidden';
+            rangeFields.style.opacity = isCustom ? '1' : '0';
+            rangeFields.style.pointerEvents = isCustom ? 'auto' : 'none';
+            singleEventField.style.visibility = isSingleEvent ? 'visible' : 'hidden';
+            singleEventField.style.opacity = isSingleEvent ? '1' : '0';
+            singleEventField.style.pointerEvents = isSingleEvent ? 'auto' : 'none';
+            singlePageFields.style.visibility = isSinglePage ? 'visible' : 'hidden';
+            singlePageFields.style.opacity = isSinglePage ? '1' : '0';
+            singlePageFields.style.pointerEvents = isSinglePage ? 'auto' : 'none';
+            importFileField.style.visibility = isImportFile ? 'visible' : 'hidden';
+            importFileField.style.opacity = isImportFile ? '1' : '0';
+            importFileField.style.pointerEvents = isImportFile ? 'auto' : 'none';
+            mainDownloadRow.style.visibility = isSingleEvent ? 'hidden' : 'visible';
+            mainDownloadRow.style.opacity = isSingleEvent ? '0' : '1';
+            mainDownloadRow.style.pointerEvents = isSingleEvent ? 'none' : 'auto';
+            csvFileName.required = !isSingleEvent;
+            startPage.required = isCustom;
+            endPage.required = isCustom;
+            singlePageNumber.required = isSinglePage;
+            eventFile.required = isImportFile;
+            syncSingleEventInputState();
+
+            if (!isCustom) {
+                startPage.value = '';
+                endPage.value = '';
+            }
+
+            if (!isSinglePage) {
+                singlePageNumber.value = '';
+                eventStart.value = '';
+                eventEnd.value = '';
+            }
+
+            if (!isImportFile) {
+                eventFile.value = '';
+            }
+
+            if (!isSingleEvent) {
+                resetSingleEventInputs();
+                singleEventResult.style.display = 'none';
+                singleEventTableBody.innerHTML = '';
+                singleEventTableHead.innerHTML = '';
+                singleEventCards.innerHTML = '';
+                currentSingleEventRows = [];
+            } else {
+                csvFileName.value = '';
+                cityName.value = '';
+            }
+        }
+
+        function setStatus(message, type) {
+            statusBox.textContent = message;
+            statusBox.className = `status-box ${type}`;
+        }
+
+        function clearStatus() {
+            statusBox.textContent = '';
+            statusBox.className = 'status-box';
+        }
+
+        function setProgress(value, completed = 0, total = 0) {
+            progressBar.style.width = `${value}%`;
+            progressText.textContent = `${value}%`;
+            progressCount.textContent = `${completed}/${total}`;
+        }
+
+        function startProgress() {
+            progressShell.style.display = 'block';
+            setProgress(0, 0, 0);
+        }
+
+        function completeProgress() {
+            const currentTotal = Number(progressCount.textContent.split('/')[1] || 0);
+            setProgress(100, currentTotal, currentTotal);
+        }
+
+        function resetProgress() {
+            window.clearInterval(pollTimer);
+            setProgress(0);
+            progressShell.style.display = 'none';
+        }
+
+        function resetModeFeedback() {
+            clearStatus();
+            resetProgress();
+            summaryCard.style.display = 'none';
+            summaryCard.innerHTML = '';
+            singleEventResult.style.display = 'none';
+            singleEventTableHead.innerHTML = '';
+            singleEventTableBody.innerHTML = '';
+            singleEventCards.innerHTML = '';
+            downloadResult.style.display = 'none';
+            downloadTableHead.innerHTML = '';
+            downloadTableBody.innerHTML = '';
+            downloadCards.innerHTML = '';
+            downloadRows = [];
+            downloadPage = 1;
+            updateDownloadPagination();
+            currentSingleEventRows = [];
+        }
+
+        function handlePageOptionChange() {
+            resetModeFeedback();
+            toggleRangeFields();
+        }
+
+        function renderSingleEventTable(rows) {
+            singleEventTableHead.innerHTML = '';
+            singleEventTableBody.innerHTML = '';
+            singleEventCards.innerHTML = '';
+            currentSingleEventRows = Array.isArray(rows) ? rows.slice() : [];
+
+            if (!currentSingleEventRows.length) {
+                singleEventResult.style.display = 'none';
+                return;
+            }
+
+            renderTableHeader(singleEventTableHead);
+
+            currentSingleEventRows.forEach(function (eventData) {
+                const valueRow = document.createElement('tr');
+
+                singleEventFields.forEach(function (fieldName) {
+                    const cell = document.createElement('td');
+
+                    cell.appendChild(createCellContent(fieldName, eventData[fieldName]));
+
+                    if (fieldName === 'Event Description') {
+                        cell.className = 'description-cell';
+                    } else if (fieldName === 'Event URL') {
+                        cell.className = 'url-cell';
+                    }
+
+                    valueRow.appendChild(cell);
+                });
+
+                singleEventTableBody.appendChild(valueRow);
+                singleEventCards.appendChild(createRecordCard(eventData));
+            });
+
+            singleEventResult.style.display = 'block';
+            window.setTimeout(function () {
+                singleEventResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 80);
+        }
+
+        function renderTableHeader(tableHead) {
+            const headerRow = document.createElement('tr');
+
+            tableHead.innerHTML = '';
+            singleEventFields.forEach(function (fieldName) {
+                const header = document.createElement('th');
+                header.textContent = fieldName;
+                headerRow.appendChild(header);
+            });
+            tableHead.appendChild(headerRow);
+        }
+
+        function isHttpUrl(value) {
+            return /^https?:\/\//i.test(String(value || '').trim());
+        }
+
+        function normalizeImageUrl(value) {
+            const rawValue = String(value || '').trim();
+
+            if (!rawValue || !rawValue.includes('_next/image')) {
+                return rawValue;
+            }
+
+            try {
+                const parsedUrl = new URL(rawValue, 'https://www.eventbrite.com');
+                const wrappedUrl = parsedUrl.searchParams.get('url');
+
+                if (!wrappedUrl) {
+                    return rawValue;
+                }
+
+                return wrappedUrl;
+            } catch (error) {
+                return rawValue;
+            }
+        }
+
+        function createCellContent(fieldName, value) {
+            const content = document.createElement('div');
+            const textValue = fieldName === 'Event Image'
+                ? normalizeImageUrl(value)
+                : String(value || '').trim();
+
+            content.className = 'cell-scroll';
+
+            if (!textValue) {
+                content.textContent = '-';
+                return content;
+            }
+
+            if (fieldName === 'Event Image' && isHttpUrl(textValue)) {
+                const link = document.createElement('a');
+                const image = document.createElement('img');
+
+                link.className = 'image-link';
+                link.href = textValue;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                image.className = 'event-thumb';
+                image.src = textValue;
+                image.alt = 'Event image';
+
+                link.appendChild(image);
+                content.appendChild(link);
+                return content;
+            }
+
+            if (isHttpUrl(textValue)) {
+                const link = document.createElement('a');
+                link.className = 'data-link';
+                link.href = textValue;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = textValue;
+                content.appendChild(link);
+                return content;
+            }
+
+            content.textContent = textValue;
+            return content;
+        }
+
+        function createRecordCard(eventData) {
+            const card = document.createElement('article');
+            const header = document.createElement('div');
+            const title = document.createElement('h3');
+            const fields = document.createElement('div');
+
+            card.className = 'record-card';
+            header.className = 'record-card-header';
+            title.className = 'record-card-title';
+            title.textContent = eventData['Event Name'] || 'Untitled event';
+            fields.className = 'record-fields';
+
+            header.appendChild(title);
+            card.appendChild(header);
+
+            singleEventFields.forEach(function (fieldName) {
+                if (fieldName === 'Event Name') {
+                    return;
+                }
+
+                const field = document.createElement('div');
+                const label = document.createElement('div');
+
+                field.className = fieldName === 'Event Description' || fieldName === 'Event URL' || fieldName === 'Event Image'
+                    ? 'record-field wide'
+                    : 'record-field';
+                label.className = 'record-label';
+                label.textContent = fieldName;
+
+                field.appendChild(label);
+                field.appendChild(createCellContent(fieldName, eventData[fieldName]));
+                fields.appendChild(field);
+            });
+
+            card.appendChild(fields);
+            return card;
+        }
+
+        function updateDownloadPagination() {
+            const totalPages = Math.max(1, Math.ceil(downloadRows.length / downloadPageSize));
+            downloadPage = Math.min(Math.max(downloadPage, 1), totalPages);
+            downloadPageInfo.textContent = `Page ${downloadPage} of ${totalPages}`;
+            downloadPrevPage.disabled = downloadPage <= 1;
+            downloadNextPage.disabled = downloadPage >= totalPages;
+            downloadPagination.style.display = downloadRows.length > downloadPageSize ? 'flex' : 'none';
+        }
+
+        function renderDownloadPage() {
+            const startIndex = (downloadPage - 1) * downloadPageSize;
+            const pageRows = downloadRows.slice(startIndex, startIndex + downloadPageSize);
+
+            downloadTableBody.innerHTML = '';
+            downloadCards.innerHTML = '';
+
+            pageRows.forEach(function (eventData) {
+                const row = document.createElement('tr');
+
+                singleEventFields.forEach(function (fieldName) {
+                    const cell = document.createElement('td');
+
+                    cell.appendChild(createCellContent(fieldName, eventData[fieldName]));
+
+                    if (fieldName === 'Event Description') {
+                        cell.className = 'description-cell';
+                    } else if (fieldName === 'Event URL') {
+                        cell.className = 'url-cell';
+                    }
+
+                    row.appendChild(cell);
+                });
+
+                downloadTableBody.appendChild(row);
+                downloadCards.appendChild(createRecordCard(eventData));
+            });
+
+            updateDownloadPagination();
+        }
+
+        function appendDownloadRows(rows) {
+            if (!Array.isArray(rows) || rows.length <= downloadRows.length) {
+                return;
+            }
+
+            if (!downloadTableHead.children.length) {
+                renderTableHeader(downloadTableHead);
+            }
+
+            downloadRows = rows.slice();
+            downloadPage = Math.ceil(downloadRows.length / downloadPageSize);
+            renderDownloadPage();
+            downloadResult.style.display = 'block';
+        }
+
+        function csvEscape(value) {
+            return `"${String(value || '').replaceAll('"', '""')}"`;
+        }
+
+        function sanitizeFilename(value) {
+            const cleaned = String(value || 'single_event')
+                .trim()
+                .replace(/[^\w\- ]+/g, '')
+                .replace(/\s+/g, '_');
+            return cleaned || 'single_event';
+        }
+
+        function showDownloadAlert(filename) {
+            const message = `${filename} downloaded successfully.`;
+
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Download complete',
+                    text: message,
+                    confirmButtonColor: '#007c68'
+                });
+                return;
+            }
+
+            alert(message);
+        }
+
+        async function confirmAllPageDownload() {
+            const message = 'This will download all page events and may take 1.5 to 2 hours. Do you want to continue?';
+
+            if (window.Swal) {
+                const result = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Confirm all page download',
+                    text: message,
+                    showCancelButton: true,
+                    confirmButtonText: 'OK, start download',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#007c68',
+                    cancelButtonColor: '#617067'
+                });
+                return result.isConfirmed;
+            }
+
+            return window.confirm(message);
+        }
+
+        function downloadSingleEventCsv() {
+            if (!currentSingleEventRows.length) {
+                setStatus('Click View Data first, then download the CSV.', 'error');
+                return;
+            }
+
+            const filename = currentSingleEventRows.length === 1
+                ? `${sanitizeFilename(currentSingleEventRows[0]['Event Name'] || 'single_event')}.csv`
+                : `single_events_${currentSingleEventRows.length}.csv`;
+            const csvRows = [
+                singleEventFields.map(csvEscape).join(','),
+                ...currentSingleEventRows.map(function (eventData) {
+                    return singleEventFields.map(function (fieldName) {
+                        return csvEscape(eventData[fieldName] || '');
+                    }).join(',');
+                })
+            ];
+            const blob = new Blob([`\uFEFF${csvRows.join('\r\n')}`], {
+                type: 'text/csv;charset=utf-8;'
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.setTimeout(function () {
+                URL.revokeObjectURL(url);
+            }, 1000);
+            showDownloadAlert(filename);
+        }
+
+        async function loadSingleEventData() {
+            clearStatus();
+            summaryCard.style.display = 'none';
+            summaryCard.innerHTML = '';
+            resetProgress();
+            singleEventResult.style.display = 'none';
+            singleEventTableHead.innerHTML = '';
+            singleEventTableBody.innerHTML = '';
+            singleEventCards.innerHTML = '';
+            downloadResult.style.display = 'none';
+            downloadTableHead.innerHTML = '';
+            downloadTableBody.innerHTML = '';
+            downloadCards.innerHTML = '';
+            downloadRows = [];
+            downloadPage = 1;
+            updateDownloadPagination();
+            currentSingleEventRows = [];
+
+            const enteredUrls = getEnteredSingleEventUrls();
+            const hasInvalidInput = getSingleEventUrlInputs().some(function (input) {
+                if (!input.value.trim()) {
+                    return false;
+                }
+
+                return !input.reportValidity();
+            });
+
+            if (!enteredUrls.length || hasInvalidInput || !getSingleEventUrlInputs()[0].reportValidity()) {
+                setStatus('Enter at least one valid Eventbrite event URL.', 'error');
+                return;
+            }
+
+            const formData = new FormData(form);
+            viewSingleEventButton.disabled = true;
+            addSingleEventUrlButton.disabled = true;
+            viewSingleEventButton.textContent = 'Loading...';
+
+            try {
+                const response = await fetch(singleEventUrlEndpoint, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    setStatus(result.message || 'Unable to load single event data.', 'error');
+                    return;
+                }
+
+                renderSingleEventTable(result.data.rows || []);
+                setStatus(result.message || 'Single event data loaded.', 'success');
+            } catch (error) {
+                setStatus('Unable to load single event data right now.', 'error');
+            } finally {
+                viewSingleEventButton.disabled = false;
+                addSingleEventUrlButton.disabled = false;
+                viewSingleEventButton.textContent = 'View Data';
+            }
+        }
+
+        async function pollProgress(jobId) {
+            const progressUrl = progressUrlTemplate.replace('__JOB_ID__', jobId);
+            pollTimer = window.setInterval(async function () {
+                try {
+                    const response = await fetch(progressUrl, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        window.clearInterval(pollTimer);
+                        resetProgress();
+                        setStatus(result.message || 'Unable to load progress.', 'error');
+                        return;
+                    }
+
+                    setProgress(result.progress || 0, result.completed || 0, result.total || 0);
+                    appendDownloadRows(result.data.rows || []);
+
+                    if (result.status === 'error') {
+                        window.clearInterval(pollTimer);
+                        resetProgress();
+                        setStatus(result.message || 'Scraping failed.', 'error');
+                        return;
+                    }
+
+                    if (result.status !== 'completed') {
+                        return;
+                    }
+
+                    window.clearInterval(pollTimer);
+                    completeProgress();
+                    setStatus(result.message, 'success');
+
+                    summaryCard.style.display = 'none';
+                    summaryCard.innerHTML = '';
+                    form.reset();
+                    allPages.checked = true;
+                    toggleRangeFields();
+                    window.setTimeout(function () {
+                        showDownloadAlert(result.data.filename);
+                    }, 150);
+                } catch (error) {
+                    window.clearInterval(pollTimer);
+                    resetProgress();
+                    setStatus('Unable to submit request right now.', 'error');
+                }
+            }, 1200);
+        }
+
+        allPages.addEventListener('change', handlePageOptionChange);
+        customPages.addEventListener('change', handlePageOptionChange);
+        singleEvent.addEventListener('change', handlePageOptionChange);
+        singlePageEvents.addEventListener('change', handlePageOptionChange);
+        importFile.addEventListener('change', handlePageOptionChange);
+        document.querySelectorAll('.option-panel > .form-check').forEach(function (optionCard) {
+            optionCard.addEventListener('click', function (event) {
+                if (event.target.matches('input, label')) {
+                    return;
+                }
+
+                const radio = optionCard.querySelector('input[type="radio"]');
+                if (radio && !radio.checked) {
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        });
+        addSingleEventUrlButton.addEventListener('click', function () {
+            const newInput = addSingleEventUrlRow('');
+            newInput.focus();
+        });
+        viewSingleEventButton.addEventListener('click', loadSingleEventData);
+        downloadSingleEventButton.addEventListener('click', downloadSingleEventCsv);
+        downloadPrevPage.addEventListener('click', function () {
+            downloadPage -= 1;
+            renderDownloadPage();
+        });
+        downloadNextPage.addEventListener('click', function () {
+            downloadPage += 1;
+            renderDownloadPage();
+        });
+        syncSingleEventInputState();
+        toggleRangeFields();
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            if (allPages.checked) {
+                const canStartAllPageDownload = await confirmAllPageDownload();
+                if (!canStartAllPageDownload) {
+                    setStatus('All page download cancelled.', 'error');
+                    return;
+                }
+            }
+
+            clearStatus();
+            summaryCard.style.display = 'none';
+            summaryCard.innerHTML = '';
+            downloadResult.style.display = 'none';
+            downloadTableHead.innerHTML = '';
+            downloadTableBody.innerHTML = '';
+            downloadCards.innerHTML = '';
+            downloadRows = [];
+            downloadPage = 1;
+            updateDownloadPagination();
+
+            if (singleEvent.checked) {
+                loadSingleEventData();
+                return;
+            }
+
+            startProgress();
+
+            const formData = new FormData(form);
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+
+            try {
+                const response = await fetch("{% url 'download_csv' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    resetProgress();
+                    setStatus(result.message || 'Something went wrong.', 'error');
+                    return;
+                }
+
+                setStatus('Scraping started. Please wait...', 'success');
+                pollProgress(result.data.job_id);
+            } catch (error) {
+                resetProgress();
+                setStatus('Unable to submit request right now.', 'error');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Download CSV';
+            }
+        });
+    </script>
+</body>
+</html>
