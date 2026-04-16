@@ -2,6 +2,7 @@ from django.test import SimpleTestCase
 
 from .scraper import extract_event_schedule
 from .scraper import normalize_eventbrite_url
+from .views import compare_uploaded_files
 from .views import extract_event_urls_from_import
 from .views import is_eventbrite_host
 
@@ -76,3 +77,39 @@ class ImportedEventUrlParsingTests(SimpleTestCase):
 
         with self.assertRaisesMessage(ValueError, "The file must contain an 'Event URL' column."):
             extract_event_urls_from_import("events.csv", file_bytes)
+
+
+class CompareFilesTests(SimpleTestCase):
+    def test_marks_duplicate_rows_between_two_files(self):
+        first_file = (
+            "Event Name,Event URL,City\n"
+            "Sample One,https://www.eventbrite.com/e/sample-one-tickets-123,Phoenix\n"
+            "Sample Two,https://www.eventbrite.com/e/sample-two-tickets-456,Tempe\n"
+        ).encode("utf-8")
+        second_file = (
+            "Event Name,Event URL,City\n"
+            "Sample One Copy,https://www.eventbrite.com/e/sample-one-tickets-123,Phoenix\n"
+            "Another Event,https://www.eventbrite.com/e/another-tickets-789,Mesa\n"
+        ).encode("utf-8")
+
+        result = compare_uploaded_files("first.csv", first_file, "second.csv", second_file)
+
+        self.assertEqual(result["first_file"]["duplicate_indexes"], [0])
+        self.assertEqual(result["second_file"]["duplicate_indexes"], [0])
+        self.assertEqual(result["summary"]["duplicate_count"], 1)
+
+    def test_marks_exact_event_name_matches_as_similar_when_other_fields_differ(self):
+        first_file = (
+            "Event Name,Event URL,City,Event Date\n"
+            "Sample One,https://www.eventbrite.com/e/sample-one-tickets-123,Phoenix,04/20/2026\n"
+        ).encode("utf-8")
+        second_file = (
+            "Event Name,Event URL,City,Event Date\n"
+            "Sample One,https://www.eventbrite.com/e/sample-one-tickets-999,Mesa,04/21/2026\n"
+        ).encode("utf-8")
+
+        result = compare_uploaded_files("first.csv", first_file, "second.csv", second_file)
+
+        self.assertEqual(result["first_file"]["similar_indexes"], [0])
+        self.assertEqual(result["second_file"]["similar_indexes"], [0])
+        self.assertEqual(result["summary"]["similar_count"], 1)

@@ -5,6 +5,7 @@ import re
 import threading
 import uuid
 import zipfile
+from difflib import SequenceMatcher
 from pathlib import Path
 from urllib.parse import urlparse
 from xml.etree import ElementTree
@@ -151,7 +152,7 @@ def parse_xlsx_rows(file_bytes):
         return rows
 
 
-def extract_event_urls_from_import(file_name, file_bytes):
+def load_tabular_rows(file_name, file_bytes):
     suffix = Path(file_name or "").suffix.lower()
     if suffix == ".csv":
         rows = list(csv.reader(io.StringIO(file_bytes.decode("utf-8-sig"))))
@@ -164,6 +165,25 @@ def extract_event_urls_from_import(file_name, file_bytes):
         raise ValueError("The uploaded file is empty.")
 
     header = [str(value or "").strip() for value in rows[0]]
+    if not any(header):
+        raise ValueError("The uploaded file must have a header row.")
+
+    records = []
+    for row in rows[1:]:
+        padded_row = list(row) + [""] * max(0, len(header) - len(row))
+        record = {
+            header[index]: str(padded_row[index] or "").strip()
+            for index in range(len(header))
+            if header[index]
+        }
+        if any(value for value in record.values()):
+            records.append(record)
+
+    return header, records
+
+
+def extract_event_urls_from_import(file_name, file_bytes):
+    header, records = load_tabular_rows(file_name, file_bytes)
     normalized_header = [re.sub(r"\s+", " ", value).strip().casefold() for value in header]
 
     url_column_index = -1
@@ -176,11 +196,9 @@ def extract_event_urls_from_import(file_name, file_bytes):
         raise ValueError("The file must contain an 'Event URL' column.")
 
     event_urls = []
-    for row in rows[1:]:
-        if url_column_index >= len(row):
-            continue
-
-        raw_url = str(row[url_column_index] or "").strip()
+    event_url_key = header[url_column_index]
+    for row in records:
+        raw_url = str(row.get(event_url_key, "") or "").strip()
         if not raw_url:
             continue
 
@@ -195,6 +213,130 @@ def extract_event_urls_from_import(file_name, file_bytes):
         raise ValueError("No valid Eventbrite URLs were found in the uploaded file.")
 
     return event_urls
+
+
+def normalize_compare_value(value):
+    return re.sub(r"\s+", " ", str(value or "")).strip().casefold()
+
+
+def build_row_signature(row):
+    preferred_keys = [
+        "Event URL",
+        "Event Name",
+        "Event Date",
+        "Event Time",
+        "Place",
+        "Street",
+        "City",
+        "State",
+        "Pincode",
+    ]
+    values = [normalize_compare_value(row.get(key, "")) for key in preferred_keys if key in row]
+    values = [value for value in values if value]
+    if values:
+        return "|".join(values)
+
+    flattened = [normalize_compare_value(value) for value in row.values() if normalize_compare_value(value)]
+    return "|".join(flattened)
+
+
+def build_similarity_key(row):
+    event_url = normalize_compare_value(row.get("Event URL", ""))
+    if event_url:
+        return f"url:{event_url}"
+
+    event_name = normalize_compare_value(row.get("Event Name", ""))
+    event_date = normalize_compare_value(row.get("Event Date", ""))
+    city = normalize_compare_value(row.get("City", ""))
+    if event_name:
+        return f"name:{event_name}|date:{event_date}|city:{city}"
+
+    return build_row_signature(row)
+
+
+def are_rows_similar(left_row, right_row):
+    left_signature = build_row_signature(left_row)
+    right_signature = build_row_signature(right_row)
+    if not left_signature or not right_signature:
+        return False
+
+    if left_signature == right_signature:
+        return True
+
+    left_name = normalize_compare_value(left_row.get("Event Name", ""))
+    right_name = normalize_compare_value(right_row.get("Event Name", ""))
+    if left_name and right_name:
+        if left_name == right_name:
+            return True
+        if SequenceMatcher(None, left_name, right_name).ratio() >= 0.92:
+            left_date = normalize_compare_value(left_row.get("Event Date", ""))
+            right_date = normalize_compare_value(right_row.get("Event Date", ""))
+            return not left_date or not right_date or left_date == right_date
+
+    return SequenceMatcher(None, left_signature, right_signature).ratio() >= 0.96
+
+
+def compare_uploaded_files(first_name, first_bytes, second_name, second_bytes):
+    first_header, first_rows = load_tabular_rows(first_name, first_bytes)
+    second_header, second_rows = load_tabular_rows(second_name, second_bytes)
+
+    second_signatures = {}
+    second_similarity_groups = {}
+    second_name_groups = {}
+    for index, row in enumerate(second_rows):
+        second_signatures.setdefault(build_row_signature(row), []).append(index)
+        second_similarity_groups.setdefault(build_similarity_key(row), []).append(index)
+        event_name = normalize_compare_value(row.get("Event Name", ""))
+        if event_name:
+            second_name_groups.setdefault(event_name, []).append(index)
+
+    duplicate_first = set()
+    duplicate_second = set()
+    similar_first = set()
+    similar_second = set()
+
+    for first_index, first_row in enumerate(first_rows):
+        signature = build_row_signature(first_row)
+        if signature and signature in second_signatures:
+            duplicate_first.add(first_index)
+            duplicate_second.update(second_signatures[signature])
+            continue
+
+        candidate_indexes = list(second_similarity_groups.get(build_similarity_key(first_row), []))
+        first_event_name = normalize_compare_value(first_row.get("Event Name", ""))
+        if first_event_name:
+            for second_index in second_name_groups.get(first_event_name, []):
+                if second_index not in candidate_indexes:
+                    candidate_indexes.append(second_index)
+
+        for second_index in candidate_indexes:
+            if are_rows_similar(first_row, second_rows[second_index]):
+                similar_first.add(first_index)
+                similar_second.add(second_index)
+                break
+
+    return {
+        "first_file": {
+            "name": first_name,
+            "headers": first_header,
+            "rows": first_rows,
+            "duplicate_indexes": sorted(duplicate_first),
+            "similar_indexes": sorted(similar_first),
+        },
+        "second_file": {
+            "name": second_name,
+            "headers": second_header,
+            "rows": second_rows,
+            "duplicate_indexes": sorted(duplicate_second),
+            "similar_indexes": sorted(similar_second),
+        },
+        "summary": {
+            "first_total": len(first_rows),
+            "second_total": len(second_rows),
+            "duplicate_count": len(duplicate_first),
+            "similar_count": len(similar_first),
+        },
+    }
 
 
 def run_scraper_job(
@@ -528,6 +670,44 @@ def single_event_data(request):
                 "rows": rows,
                 "failed_urls": failed_urls,
             },
+        }
+    )
+
+
+@require_POST
+def compare_files(request):
+    first_file = request.FILES.get("compare_file_one")
+    second_file = request.FILES.get("compare_file_two")
+
+    if not first_file or not second_file:
+        return JsonResponse(
+            {"status": "error", "message": "Both files are required for comparison."},
+            status=400,
+        )
+
+    try:
+        result = compare_uploaded_files(
+            first_file.name,
+            first_file.read(),
+            second_file.name,
+            second_file.read(),
+        )
+    except ValueError as exc:
+        return JsonResponse(
+            {"status": "error", "message": str(exc)},
+            status=400,
+        )
+
+    return JsonResponse(
+        {
+            "status": "success",
+            "message": (
+                f"Compared {result['summary']['first_total']} row(s) with "
+                f"{result['summary']['second_total']} row(s). Found "
+                f"{result['summary']['duplicate_count']} duplicate and "
+                f"{result['summary']['similar_count']} similar row(s)."
+            ),
+            "data": result,
         }
     )
 
