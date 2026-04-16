@@ -269,13 +269,15 @@
 
         .single-event-field,
         .import-file-field,
+        .compare-file-field,
         .single-page-fields {
             display: none;
             grid-column: 1 / -1;
         }
 
         .single-event-field,
-        .import-file-field {
+        .import-file-field,
+        .compare-file-field {
             display: block;
             grid-row: 2;
             visibility: hidden;
@@ -296,6 +298,16 @@
             flex-wrap: wrap;
             gap: 10px;
             margin-top: 8px;
+        }
+
+        .compare-file-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .compare-file-box {
+            min-width: 0;
         }
 
         .single-event-url-list {
@@ -514,6 +526,67 @@
             color: var(--ink);
         }
 
+        .single-event-result .single-table-wrap {
+            overflow: auto;
+        }
+
+        .single-event-result .record-list {
+            display: none;
+        }
+
+        .single-event-result table {
+            display: table;
+        }
+
+        .single-event-result th:nth-child(1),
+        .single-event-result td:nth-child(1) {
+            min-width: 220px;
+        }
+
+        .single-event-result th:nth-child(2),
+        .single-event-result td:nth-child(2) {
+            min-width: 560px;
+        }
+
+        .single-event-result th:nth-child(3),
+        .single-event-result td:nth-child(3) {
+            min-width: 120px;
+        }
+
+        .single-event-result th:nth-child(4),
+        .single-event-result td:nth-child(4),
+        .single-event-result th:nth-child(5),
+        .single-event-result td:nth-child(5),
+        .single-event-result th:nth-child(6),
+        .single-event-result td:nth-child(6),
+        .single-event-result th:nth-child(7),
+        .single-event-result td:nth-child(7) {
+            min-width: 120px;
+        }
+
+        .single-event-result th:nth-child(8),
+        .single-event-result td:nth-child(8),
+        .single-event-result th:nth-child(9),
+        .single-event-result td:nth-child(9),
+        .single-event-result th:nth-child(10),
+        .single-event-result td:nth-child(10),
+        .single-event-result th:nth-child(11),
+        .single-event-result td:nth-child(11),
+        .single-event-result th:nth-child(12),
+        .single-event-result td:nth-child(12) {
+            min-width: 140px;
+        }
+
+        .single-event-result th:nth-child(13),
+        .single-event-result td:nth-child(13) {
+            min-width: 240px;
+        }
+
+        .single-event-result td .cell-scroll {
+            max-height: 120px;
+            overflow: auto;
+        }
+
         .single-table-wrap {
             flex: 1 1 auto;
             overflow: auto;
@@ -524,12 +597,12 @@
 
         .single-result table {
             display: table;
-            width: 100%;
-            min-width: 0;
+            width: max-content;
+            min-width: 100%;
             margin: 0;
             border-collapse: separate;
             border-spacing: 0;
-            table-layout: fixed;
+            table-layout: auto;
             font-family: "Segoe UI", sans-serif;
             font-size: 0.74rem;
         }
@@ -542,7 +615,8 @@
             border-right: 1px solid var(--line);
             border-bottom: 1px solid var(--line);
             vertical-align: top;
-            overflow-wrap: anywhere;
+            overflow-wrap: break-word;
+            word-break: normal;
         }
 
         .single-result th {
@@ -709,6 +783,138 @@
             text-align: center;
         }
 
+        .compare-result {
+            display: none;
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fff;
+            overflow: hidden;
+            box-shadow: 0 16px 38px rgba(16, 35, 31, 0.09);
+        }
+
+        .compare-result[style*="block"] {
+            display: block !important;
+        }
+
+        .compare-summary {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+            background: #fbfdfc;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 0.9rem;
+            color: var(--ink);
+        }
+
+        .compare-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--line);
+            background: #fff;
+        }
+
+        .compare-filter-button {
+            padding: 7px 12px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: #fff;
+            color: var(--ink);
+            font-size: 0.78rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .compare-filter-button.active {
+            border-color: var(--accent-dark);
+            background: #e7f3ed;
+            color: var(--accent-dark);
+        }
+
+        .compare-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0;
+        }
+
+        .compare-panel {
+            min-width: 0;
+            border-right: 1px solid var(--line);
+        }
+
+        .compare-panel:last-child {
+            border-right: 0;
+        }
+
+        .compare-panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--line);
+            background: #f4faf7;
+        }
+
+        .compare-panel-title {
+            margin: 0;
+            font-size: 0.96rem;
+            font-weight: 800;
+            color: var(--ink);
+        }
+
+        .compare-panel-meta {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        .compare-wrap {
+            overflow: auto;
+        }
+
+        .compare-wrap table {
+            width: max-content;
+            min-width: 100%;
+            margin: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: auto;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 0.74rem;
+        }
+
+        .compare-wrap th,
+        .compare-wrap td {
+            padding: 9px 8px;
+            border-right: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+            overflow-wrap: break-word;
+            word-break: normal;
+        }
+
+        .compare-wrap th {
+            color: var(--accent-dark);
+            background: #f1f7f5;
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .compare-wrap tr.duplicate-row td,
+        .compare-wrap tr.similar-row td {
+            background: rgba(197, 61, 47, 0.12);
+            color: #7f1d1d;
+        }
+
+        .compare-wrap tr.duplicate-row td {
+            box-shadow: inset 0 0 0 1px rgba(197, 61, 47, 0.25);
+        }
+
+        .compare-wrap tr.similar-row td {
+            box-shadow: inset 0 0 0 1px rgba(197, 61, 47, 0.16);
+        }
+
         @media (max-width: 1100px) {
             .form-card {
                 grid-template-columns: 1fr;
@@ -734,6 +940,19 @@
 
             .single-table-wrap {
                 max-height: none;
+            }
+
+            .compare-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .compare-panel {
+                border-right: 0;
+                border-bottom: 1px solid var(--line);
+            }
+
+            .compare-panel:last-child {
+                border-bottom: 0;
             }
         }
 
@@ -777,6 +996,10 @@
 
             .btn-remove-url {
                 width: 100%;
+            }
+
+            .compare-file-grid {
+                grid-template-columns: 1fr;
             }
 
         }
@@ -869,6 +1092,12 @@
                                 <span class="field-note">Upload .xlsx or .csv with an Event URL column and generate a new file.</span>
                             </div>
 
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="page_option" id="compareFiles" value="compare_files">
+                                <label class="form-check-label" for="compareFiles">Compare Files</label>
+                                <span class="field-note">Upload two files and highlight duplicate or similar rows in red.</span>
+                            </div>
+
                             <div id="rangeFields" class="range-fields row g-3">
                                 <div class="col-md-6">
                                     <label for="startPage" class="form-label">Starting Page</label>
@@ -925,6 +1154,32 @@
                                 >
                                 <div class="field-note">Use the first sheet and include a column named Event URL.</div>
                             </div>
+
+                            <div id="compareFileField" class="compare-file-field">
+                                <div class="compare-file-grid">
+                                    <div class="compare-file-box">
+                                        <label for="compareFileOne" class="form-label">First File</label>
+                                        <input
+                                            type="file"
+                                            class="form-control"
+                                            id="compareFileOne"
+                                            name="compare_file_one"
+                                            accept=".xlsx,.csv"
+                                        >
+                                    </div>
+                                    <div class="compare-file-box">
+                                        <label for="compareFileTwo" class="form-label">Second File</label>
+                                        <input
+                                            type="file"
+                                            class="form-control"
+                                            id="compareFileTwo"
+                                            name="compare_file_two"
+                                            accept=".xlsx,.csv"
+                                        >
+                                    </div>
+                                </div>
+                                <div class="field-note">Rows that are duplicate or very similar across both files will be highlighted in red.</div>
+                            </div>
                         </div>
                     </div>
 
@@ -960,7 +1215,7 @@
         </div>
 
         <section class="data-area" aria-label="Fetched event records">
-            <div id="singleEventResult" class="single-result">
+            <div id="singleEventResult" class="single-result single-event-result">
                 <div class="single-result-header">
                     <h2 class="single-result-title">Single Event Data</h2>
                     <button type="button" id="downloadSingleEventButton" class="btn btn-single-download">Download CSV</button>
@@ -990,6 +1245,40 @@
                     <button type="button" id="downloadNextPage" class="pagination-button">Next</button>
                 </div>
             </div>
+            <div id="compareResult" class="compare-result">
+                <div id="compareSummary" class="compare-summary"></div>
+                <div class="compare-toolbar">
+                    <button type="button" id="compareFilterSimilar" class="compare-filter-button active">Similar Only</button>
+                    <button type="button" id="compareFilterMatched" class="compare-filter-button">Similar + Duplicate</button>
+                    <button type="button" id="compareFilterAll" class="compare-filter-button">All Rows</button>
+                </div>
+                <div class="compare-grid">
+                    <section class="compare-panel">
+                        <div class="compare-panel-header">
+                            <h2 id="compareFirstTitle" class="compare-panel-title">First File</h2>
+                            <div id="compareFirstMeta" class="compare-panel-meta"></div>
+                        </div>
+                        <div class="compare-wrap">
+                            <table>
+                                <thead id="compareFirstHead"></thead>
+                                <tbody id="compareFirstBody"></tbody>
+                            </table>
+                        </div>
+                    </section>
+                    <section class="compare-panel">
+                        <div class="compare-panel-header">
+                            <h2 id="compareSecondTitle" class="compare-panel-title">Second File</h2>
+                            <div id="compareSecondMeta" class="compare-panel-meta"></div>
+                        </div>
+                        <div class="compare-wrap">
+                            <table>
+                                <thead id="compareSecondHead"></thead>
+                                <tbody id="compareSecondBody"></tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
         </section>
     </div>
 
@@ -1001,12 +1290,16 @@
         const singleEvent = document.getElementById('singleEvent');
         const singlePageEvents = document.getElementById('singlePageEvents');
         const importFile = document.getElementById('importFile');
+        const compareFiles = document.getElementById('compareFiles');
         const cityName = document.getElementById('cityName');
         const rangeFields = document.getElementById('rangeFields');
         const singlePageFields = document.getElementById('singlePageFields');
         const singleEventField = document.getElementById('singleEventField');
         const importFileField = document.getElementById('importFileField');
+        const compareFileField = document.getElementById('compareFileField');
         const eventFile = document.getElementById('eventFile');
+        const compareFileOne = document.getElementById('compareFileOne');
+        const compareFileTwo = document.getElementById('compareFileTwo');
         const singleEventUrlList = document.getElementById('singleEventUrlList');
         const singleEventUrl = document.getElementById('singleEventUrl');
         const singlePageNumber = document.getElementById('singlePageNumber');
@@ -1039,6 +1332,20 @@
         const progressCount = document.getElementById('progressCount');
         const progressUrlTemplate = "{% url 'download_progress' '__JOB_ID__' %}";
         const singleEventUrlEndpoint = "{% url 'single_event_data' %}";
+        const compareFilesEndpoint = "{% url 'compare_files' %}";
+        const compareResult = document.getElementById('compareResult');
+        const compareSummary = document.getElementById('compareSummary');
+        const compareFirstTitle = document.getElementById('compareFirstTitle');
+        const compareFirstMeta = document.getElementById('compareFirstMeta');
+        const compareFirstHead = document.getElementById('compareFirstHead');
+        const compareFirstBody = document.getElementById('compareFirstBody');
+        const compareSecondTitle = document.getElementById('compareSecondTitle');
+        const compareSecondMeta = document.getElementById('compareSecondMeta');
+        const compareSecondHead = document.getElementById('compareSecondHead');
+        const compareSecondBody = document.getElementById('compareSecondBody');
+        const compareFilterSimilar = document.getElementById('compareFilterSimilar');
+        const compareFilterMatched = document.getElementById('compareFilterMatched');
+        const compareFilterAll = document.getElementById('compareFilterAll');
         const singleEventFields = [
             'Event Name',
             'Event Description',
@@ -1058,6 +1365,8 @@
         let currentSingleEventRows = [];
         let downloadRows = [];
         let downloadPage = 1;
+        let currentCompareData = null;
+        let compareFilterMode = 'similar';
         let pollTimer;
 
         function getSingleEventUrlInputs() {
@@ -1133,12 +1442,13 @@
             const isSingleEvent = singleEvent.checked;
             const isSinglePage = singlePageEvents.checked;
             const isImportFile = importFile.checked;
-            csvFileName.closest('.col-12').style.visibility = isSingleEvent ? 'hidden' : 'visible';
-            csvFileName.closest('.col-12').style.opacity = isSingleEvent ? '0' : '1';
-            csvFileName.closest('.col-12').style.pointerEvents = isSingleEvent ? 'none' : 'auto';
-            cityName.closest('.col-12').style.visibility = isSingleEvent || isImportFile ? 'hidden' : 'visible';
-            cityName.closest('.col-12').style.opacity = isSingleEvent || isImportFile ? '0' : '1';
-            cityName.closest('.col-12').style.pointerEvents = isSingleEvent || isImportFile ? 'none' : 'auto';
+            const isCompareFiles = compareFiles.checked;
+            csvFileName.closest('.col-12').style.visibility = isSingleEvent || isCompareFiles ? 'hidden' : 'visible';
+            csvFileName.closest('.col-12').style.opacity = isSingleEvent || isCompareFiles ? '0' : '1';
+            csvFileName.closest('.col-12').style.pointerEvents = isSingleEvent || isCompareFiles ? 'none' : 'auto';
+            cityName.closest('.col-12').style.visibility = isSingleEvent || isImportFile || isCompareFiles ? 'hidden' : 'visible';
+            cityName.closest('.col-12').style.opacity = isSingleEvent || isImportFile || isCompareFiles ? '0' : '1';
+            cityName.closest('.col-12').style.pointerEvents = isSingleEvent || isImportFile || isCompareFiles ? 'none' : 'auto';
             rangeFields.style.visibility = isCustom ? 'visible' : 'hidden';
             rangeFields.style.opacity = isCustom ? '1' : '0';
             rangeFields.style.pointerEvents = isCustom ? 'auto' : 'none';
@@ -1151,14 +1461,19 @@
             importFileField.style.visibility = isImportFile ? 'visible' : 'hidden';
             importFileField.style.opacity = isImportFile ? '1' : '0';
             importFileField.style.pointerEvents = isImportFile ? 'auto' : 'none';
+            compareFileField.style.visibility = isCompareFiles ? 'visible' : 'hidden';
+            compareFileField.style.opacity = isCompareFiles ? '1' : '0';
+            compareFileField.style.pointerEvents = isCompareFiles ? 'auto' : 'none';
             mainDownloadRow.style.visibility = isSingleEvent ? 'hidden' : 'visible';
             mainDownloadRow.style.opacity = isSingleEvent ? '0' : '1';
             mainDownloadRow.style.pointerEvents = isSingleEvent ? 'none' : 'auto';
-            csvFileName.required = !isSingleEvent;
+            csvFileName.required = !isSingleEvent && !isCompareFiles;
             startPage.required = isCustom;
             endPage.required = isCustom;
             singlePageNumber.required = isSinglePage;
             eventFile.required = isImportFile;
+            compareFileOne.required = isCompareFiles;
+            compareFileTwo.required = isCompareFiles;
             syncSingleEventInputState();
 
             if (!isCustom) {
@@ -1175,6 +1490,13 @@
             if (!isImportFile) {
                 eventFile.value = '';
             }
+
+            if (!isCompareFiles) {
+                compareFileOne.value = '';
+                compareFileTwo.value = '';
+            }
+
+            submitButton.textContent = isCompareFiles ? 'Compare Files' : 'Download CSV';
 
             if (!isSingleEvent) {
                 resetSingleEventInputs();
@@ -1234,6 +1556,15 @@
             downloadTableHead.innerHTML = '';
             downloadTableBody.innerHTML = '';
             downloadCards.innerHTML = '';
+            compareResult.style.display = 'none';
+            compareSummary.innerHTML = '';
+            compareFirstHead.innerHTML = '';
+            compareFirstBody.innerHTML = '';
+            compareSecondHead.innerHTML = '';
+            compareSecondBody.innerHTML = '';
+            currentCompareData = null;
+            compareFilterMode = 'similar';
+            updateCompareFilterButtons();
             downloadRows = [];
             downloadPage = 1;
             updateDownloadPagination();
@@ -1295,6 +1626,135 @@
                 headerRow.appendChild(header);
             });
             tableHead.appendChild(headerRow);
+        }
+
+        function updateCompareFilterButtons() {
+            compareFilterSimilar.classList.toggle('active', compareFilterMode === 'similar');
+            compareFilterMatched.classList.toggle('active', compareFilterMode === 'matched');
+            compareFilterAll.classList.toggle('active', compareFilterMode === 'all');
+        }
+
+        function getFilteredCompareRows(rows, duplicateIndexes, similarIndexes) {
+            const duplicateSet = new Set(duplicateIndexes || []);
+            const similarSet = new Set(similarIndexes || []);
+
+            if (compareFilterMode === 'all') {
+                return rows.map(function (row, index) {
+                    return { row: row, index: index };
+                });
+            }
+
+            return rows
+                .map(function (row, index) {
+                    return { row: row, index: index };
+                })
+                .filter(function (item) {
+                    if (compareFilterMode === 'matched') {
+                        return duplicateSet.has(item.index) || similarSet.has(item.index);
+                    }
+
+                    return similarSet.has(item.index);
+                });
+        }
+
+        function renderCompareTable(tableHead, tableBody, headers, rows, duplicateIndexes, similarIndexes) {
+            const headerRow = document.createElement('tr');
+            const duplicateSet = new Set(duplicateIndexes || []);
+            const similarSet = new Set(similarIndexes || []);
+            const filteredRows = getFilteredCompareRows(rows, duplicateIndexes, similarIndexes);
+
+            tableHead.innerHTML = '';
+            tableBody.innerHTML = '';
+
+            headers.forEach(function (fieldName) {
+                const header = document.createElement('th');
+                header.textContent = fieldName;
+                headerRow.appendChild(header);
+            });
+            tableHead.appendChild(headerRow);
+
+            filteredRows.forEach(function (item) {
+                const tr = document.createElement('tr');
+                const row = item.row;
+                const index = item.index;
+
+                if (duplicateSet.has(index)) {
+                    tr.className = 'duplicate-row';
+                } else if (similarSet.has(index)) {
+                    tr.className = 'similar-row';
+                }
+
+                headers.forEach(function (fieldName) {
+                    const td = document.createElement('td');
+                    td.appendChild(createCellContent(fieldName, row[fieldName] || ''));
+                    tr.appendChild(td);
+                });
+
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function applyCompareFilter() {
+            if (!currentCompareData || !currentCompareData.first_file || !currentCompareData.second_file) {
+                return;
+            }
+
+            updateCompareFilterButtons();
+
+            const firstRows = currentCompareData.first_file.rows || [];
+            const secondRows = currentCompareData.second_file.rows || [];
+            const firstFilteredCount = getFilteredCompareRows(
+                firstRows,
+                currentCompareData.first_file.duplicate_indexes || [],
+                currentCompareData.first_file.similar_indexes || [],
+            ).length;
+            const secondFilteredCount = getFilteredCompareRows(
+                secondRows,
+                currentCompareData.second_file.duplicate_indexes || [],
+                currentCompareData.second_file.similar_indexes || [],
+            ).length;
+
+            compareFirstMeta.textContent = `${firstFilteredCount} of ${firstRows.length} rows shown`;
+            compareSecondMeta.textContent = `${secondFilteredCount} of ${secondRows.length} rows shown`;
+
+            renderCompareTable(
+                compareFirstHead,
+                compareFirstBody,
+                currentCompareData.first_file.headers || [],
+                firstRows,
+                currentCompareData.first_file.duplicate_indexes || [],
+                currentCompareData.first_file.similar_indexes || [],
+            );
+            renderCompareTable(
+                compareSecondHead,
+                compareSecondBody,
+                currentCompareData.second_file.headers || [],
+                secondRows,
+                currentCompareData.second_file.duplicate_indexes || [],
+                currentCompareData.second_file.similar_indexes || [],
+            );
+        }
+
+        function renderCompareResults(data) {
+            if (!data || !data.first_file || !data.second_file) {
+                compareResult.style.display = 'none';
+                return;
+            }
+
+            currentCompareData = data;
+            compareFirstTitle.textContent = data.first_file.name || 'First File';
+            compareSecondTitle.textContent = data.second_file.name || 'Second File';
+            compareSummary.innerHTML =
+                `<strong>Duplicates:</strong> ${data.summary.duplicate_count} ` +
+                `| <strong>Similar:</strong> ${data.summary.similar_count} ` +
+                `| <strong>First file:</strong> ${data.summary.first_total} rows ` +
+                `| <strong>Second file:</strong> ${data.summary.second_total} rows`;
+            applyCompareFilter();
+
+            compareResult.style.display = 'block';
+            window.setTimeout(function () {
+                compareResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 80);
         }
 
         function isHttpUrl(value) {
@@ -1605,6 +2065,55 @@
             }
         }
 
+        async function loadCompareData() {
+            clearStatus();
+            resetProgress();
+            singleEventResult.style.display = 'none';
+            downloadResult.style.display = 'none';
+            compareResult.style.display = 'none';
+            compareSummary.innerHTML = '';
+            compareFirstHead.innerHTML = '';
+            compareFirstBody.innerHTML = '';
+            compareSecondHead.innerHTML = '';
+            compareSecondBody.innerHTML = '';
+            currentCompareData = null;
+            compareFilterMode = 'similar';
+            updateCompareFilterButtons();
+
+            if (!compareFileOne.files.length || !compareFileTwo.files.length) {
+                setStatus('Upload both files before comparing.', 'error');
+                return;
+            }
+
+            const formData = new FormData(form);
+            submitButton.disabled = true;
+            submitButton.textContent = 'Comparing...';
+
+            try {
+                const response = await fetch(compareFilesEndpoint, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    setStatus(result.message || 'Unable to compare files.', 'error');
+                    return;
+                }
+
+                renderCompareResults(result.data);
+                setStatus(result.message || 'Comparison completed.', 'success');
+            } catch (error) {
+                setStatus('Unable to compare files right now.', 'error');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = compareFiles.checked ? 'Compare Files' : 'Download CSV';
+            }
+        }
+
         async function pollProgress(jobId) {
             const progressUrl = progressUrlTemplate.replace('__JOB_ID__', jobId);
             pollTimer = window.setInterval(async function () {
@@ -1662,6 +2171,7 @@
         singleEvent.addEventListener('change', handlePageOptionChange);
         singlePageEvents.addEventListener('change', handlePageOptionChange);
         importFile.addEventListener('change', handlePageOptionChange);
+        compareFiles.addEventListener('change', handlePageOptionChange);
         document.querySelectorAll('.option-panel > .form-check').forEach(function (optionCard) {
             optionCard.addEventListener('click', function (event) {
                 if (event.target.matches('input, label')) {
@@ -1689,8 +2199,21 @@
             downloadPage += 1;
             renderDownloadPage();
         });
+        compareFilterSimilar.addEventListener('click', function () {
+            compareFilterMode = 'similar';
+            applyCompareFilter();
+        });
+        compareFilterMatched.addEventListener('click', function () {
+            compareFilterMode = 'matched';
+            applyCompareFilter();
+        });
+        compareFilterAll.addEventListener('click', function () {
+            compareFilterMode = 'all';
+            applyCompareFilter();
+        });
         syncSingleEventInputState();
         toggleRangeFields();
+        updateCompareFilterButtons();
 
         form.addEventListener('submit', async function (event) {
             event.preventDefault();
@@ -1710,12 +2233,26 @@
             downloadTableHead.innerHTML = '';
             downloadTableBody.innerHTML = '';
             downloadCards.innerHTML = '';
+            compareResult.style.display = 'none';
+            compareSummary.innerHTML = '';
+            compareFirstHead.innerHTML = '';
+            compareFirstBody.innerHTML = '';
+            compareSecondHead.innerHTML = '';
+            compareSecondBody.innerHTML = '';
+            currentCompareData = null;
+            compareFilterMode = 'similar';
+            updateCompareFilterButtons();
             downloadRows = [];
             downloadPage = 1;
             updateDownloadPagination();
 
             if (singleEvent.checked) {
                 loadSingleEventData();
+                return;
+            }
+
+            if (compareFiles.checked) {
+                loadCompareData();
                 return;
             }
 
