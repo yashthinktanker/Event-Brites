@@ -193,6 +193,21 @@ def clean_text(value):
     return re.sub(r"\s+", " ", value).strip()
 
 
+def is_probable_event_detail_url(value):
+    normalized_value = normalize_eventbrite_url(value)
+    if not normalized_value:
+        return False
+
+    parsed = urlparse(normalized_value)
+    host = parsed.netloc.lower()
+    if host.startswith("www."):
+        host = host[4:]
+
+    return host == "eventbrite.com" and (
+        "/e/" in parsed.path.lower() or "tickets-" in parsed.path.lower()
+    )
+
+
 def sanitize_csv_name(csv_file_name):
     cleaned = re.sub(r"[^\w\- ]+", "", csv_file_name).strip().replace(" ", "_")
     return cleaned or "events"
@@ -261,6 +276,8 @@ def mark_visible_event_cards(page):
 
 
 def process_event(link):
+    page = None
+
     try:
         link = normalize_eventbrite_url(link)
         page = StealthyFetcher.fetch(
@@ -269,7 +286,15 @@ def process_event(link):
             network_idle=True,
             timeout=60000,
         )
+        return extract_event_data_from_page(page, link)
+    except Exception as exc:
+        print(f"Error processing {link}: {exc}")
+        return None
 
+
+def extract_event_data_from_page(page, link):
+    try:
+        link = normalize_eventbrite_url(link)
         title_tag = page.css("h1").first
         name = clean_text(title_tag.text) if title_tag else ""
         if not name:
@@ -354,6 +379,65 @@ def process_event(link):
         }
     except Exception as exc:
         print(f"Error processing {link}: {exc}")
+        return None
+
+
+def extract_similar_event_links(page, current_link, limit=2):
+    current_canonical = canonical_event_url(current_link)
+    similar_links = []
+    seen_links = set()
+
+    for selector in ("a.event-card-link", "a[href*='/e/']", "a[href*='tickets-']"):
+        for anchor in page.css(selector):
+            raw_link = clean_text(anchor.attrib.get("href", "")).split("?")[0]
+            if not raw_link or not is_probable_event_detail_url(raw_link):
+                continue
+
+            normalized_link = normalize_eventbrite_url(raw_link)
+            canonical_link = canonical_event_url(normalized_link)
+            if (
+                not canonical_link
+                or canonical_link == current_canonical
+                or canonical_link in SKIP_URLS
+                or canonical_link in seen_links
+            ):
+                continue
+
+            seen_links.add(canonical_link)
+            similar_links.append(normalized_link)
+            if len(similar_links) >= limit:
+                return similar_links
+
+    return similar_links
+
+
+def process_event_with_similar(link, similar_limit=2):
+    try:
+        normalized_link = normalize_eventbrite_url(link)
+        page = StealthyFetcher.fetch(
+            normalized_link,
+            headless=True,
+            network_idle=True,
+            timeout=60000,
+        )
+        record = extract_event_data_from_page(page, normalized_link)
+        if not record:
+            return None
+
+        similar_rows = []
+        similar_links = extract_similar_event_links(page, normalized_link, limit=similar_limit)
+        for similar_link in similar_links:
+            similar_row = process_event(similar_link)
+            if similar_row:
+                similar_rows.append(similar_row)
+
+        return {
+            "record": record,
+            "similar_rows": similar_rows,
+            "similar_count": len(similar_rows),
+        }
+    except Exception as exc:
+        print(f"Error processing bundle {link}: {exc}")
         return None
 
 

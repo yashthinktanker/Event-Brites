@@ -1,1 +1,15 @@
-{"status": "error", "progress": 0, "completed": 0, "total": 82, "message": "Scraping failed: cannot schedule new futures after interpreter shutdown", "result": null, "rows": [], "page_option": "custom", "city_name": "Tempe", "start_page": 1, "end_page": 4, "event_start": null, "event_end": null}
+{
+  "status": "error",
+  "progress": 0,
+  "completed": 0,
+  "total": 82,
+  "message": "Scraping failed: cannot schedule new futures after interpreter shutdown",
+  "result": null,
+  "rows": [],
+  "page_option": "custom",
+  "city_name": "Tempe",
+  "start_page": 1,
+  "end_page": 4,
+  "event_start": null,
+  "event_end": null
+}

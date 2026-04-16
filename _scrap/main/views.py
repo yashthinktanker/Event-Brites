@@ -17,6 +17,7 @@ from django.views.decorators.http import require_POST
 
 from .scraper import normalize_eventbrite_url
 from .scraper import process_event
+from .scraper import process_event_with_similar
 from .scraper import run_imported_url_scraper
 from .scraper import run_scraper
 from .scraper import sanitize_csv_name
@@ -32,6 +33,23 @@ def is_eventbrite_host(host):
         normalized_host = normalized_host[4:]
 
     return normalized_host in {"eventbrite.com", "eventbrite.sg", "eventbrite.ca"}
+
+
+def write_failed_single_event_urls(failed_urls):
+    if not failed_urls:
+        return None
+
+    output_dir = Path(settings.MEDIA_ROOT)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / "not_data_scan_url.csv"
+
+    with output_path.open("w", newline="", encoding="utf-8-sig") as file_handle:
+        writer = csv.writer(file_handle)
+        writer.writerow(["Event URL"])
+        for failed_url in failed_urls:
+            writer.writerow([failed_url])
+
+    return output_path.name
 
 
 def home(request):
@@ -489,6 +507,7 @@ def single_event_data(request):
         )
 
     rows = []
+    bundles = []
     failed_urls = []
 
     for event_url in event_urls:
@@ -501,32 +520,63 @@ def single_event_data(request):
             continue
 
         normalized_url = normalize_eventbrite_url(normalized_url)
-        event_data = process_event(normalized_url)
-        if not event_data:
+        event_bundle = process_event_with_similar(normalized_url, similar_limit=2)
+        if not event_bundle or not event_bundle.get("record"):
             failed_urls.append(normalized_url)
             continue
 
-        rows.append(event_data)
+        bundles.append(
+            {
+                "record": event_bundle["record"],
+                "similar_rows": event_bundle.get("similar_rows", []),
+                "similar_count": event_bundle.get("similar_count", 0),
+            }
+        )
+        rows.append(event_bundle["record"])
+        rows.extend(event_bundle.get("similar_rows", []))
 
     if not rows:
+        failed_file_name = write_failed_single_event_urls(failed_urls)
         return JsonResponse(
-            {"status": "error", "message": "Unable to load data for the provided event URL(s)."},
+            {
+                "status": "error",
+                "message": (
+                    "Unable to load data for the provided event URL(s). "
+                    f"Failed URLs were saved to {failed_file_name}."
+                    if failed_file_name
+                    else "Unable to load data for the provided event URL(s)."
+                ),
+                "data": {
+                    "failed_urls": failed_urls,
+                    "failed_file_name": failed_file_name,
+                },
+            },
             status=400,
         )
 
+    primary_count = len(bundles)
+    similar_count = sum(bundle["similar_count"] for bundle in bundles)
+    failed_file_name = write_failed_single_event_urls(failed_urls)
+
     if failed_urls:
-        message = f"Loaded {len(rows)} event(s). Skipped {len(failed_urls)} invalid or failed URL(s)."
+        message = (
+            f"Loaded {primary_count} event(s) and {similar_count} similar result(s). "
+            f"Skipped {len(failed_urls)} invalid or failed URL(s). "
+            f"Saved them to {failed_file_name}."
+        )
     else:
-        message = f"Loaded {len(rows)} event(s)."
+        message = f"Loaded {primary_count} event(s) and {similar_count} similar result(s)."
 
     return JsonResponse(
         {
             "status": "success",
             "message": message,
             "data": {
-                "record": rows[0],
+                "record": bundles[0]["record"],
                 "rows": rows,
+                "bundles": bundles,
                 "failed_urls": failed_urls,
+                "failed_file_name": failed_file_name,
             },
         }
     )

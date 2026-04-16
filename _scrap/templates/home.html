@@ -514,6 +514,115 @@
             color: var(--ink);
         }
 
+        .single-discovery-view {
+            display: grid;
+            gap: 18px;
+            padding: 18px 16px 0;
+        }
+
+        .similar-group {
+            display: grid;
+            gap: 12px;
+        }
+
+        .similar-primary-card,
+        .similar-result-card {
+            display: grid;
+            grid-template-columns: 168px minmax(0, 1fr);
+            gap: 14px;
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: 0 12px 28px rgba(16, 35, 31, 0.08);
+        }
+
+        .similar-result-card {
+            border-radius: 14px;
+            box-shadow: 0 8px 20px rgba(16, 35, 31, 0.05);
+        }
+
+        .similar-image-link {
+            display: block;
+            width: 100%;
+            text-decoration: none;
+        }
+
+        .similar-image {
+            display: block;
+            width: 100%;
+            height: 112px;
+            object-fit: cover;
+            border-radius: 12px;
+            background: var(--field);
+            border: 1px solid var(--line);
+        }
+
+        .similar-card-body {
+            min-width: 0;
+            display: grid;
+            gap: 6px;
+            align-content: start;
+        }
+
+        .similar-card-title {
+            margin: 0;
+            font-size: 1.15rem;
+            line-height: 1.3;
+            font-weight: 800;
+            color: #2f3148;
+        }
+
+        .similar-result-card .similar-card-title {
+            font-size: 1rem;
+        }
+
+        .similar-card-title a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .similar-card-title a:hover,
+        .similar-card-title a:focus {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .similar-card-meta,
+        .similar-card-location,
+        .similar-card-venue {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .similar-toggle {
+            justify-self: start;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: #4a67ff;
+            font-size: 0.92rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .similar-toggle:hover,
+        .similar-toggle:focus {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .similar-results-list {
+            display: none;
+            gap: 12px;
+            padding-top: 2px;
+        }
+
+        .similar-results-list.is-open {
+            display: grid;
+        }
+
         .single-table-wrap {
             flex: 1 1 auto;
             overflow: auto;
@@ -734,6 +843,15 @@
 
             .single-table-wrap {
                 max-height: none;
+            }
+
+            .similar-primary-card,
+            .similar-result-card {
+                grid-template-columns: 1fr;
+            }
+
+            .similar-image {
+                height: 180px;
             }
         }
 
@@ -965,6 +1083,7 @@
                     <h2 class="single-result-title">Single Event Data</h2>
                     <button type="button" id="downloadSingleEventButton" class="btn btn-single-download">Download CSV</button>
                 </div>
+                <div id="singleEventDiscovery" class="single-discovery-view"></div>
                 <div class="single-table-wrap">
                     <table>
                         <thead id="singleEventTableHead"></thead>
@@ -1019,6 +1138,7 @@
         const singleEventTableHead = document.getElementById('singleEventTableHead');
         const singleEventTableBody = document.getElementById('singleEventTableBody');
         const singleEventCards = document.getElementById('singleEventCards');
+        const singleEventDiscovery = document.getElementById('singleEventDiscovery');
         const downloadResult = document.getElementById('downloadResult');
         const downloadTableHead = document.getElementById('downloadTableHead');
         const downloadTableBody = document.getElementById('downloadTableBody');
@@ -1182,6 +1302,7 @@
                 singleEventTableBody.innerHTML = '';
                 singleEventTableHead.innerHTML = '';
                 singleEventCards.innerHTML = '';
+                singleEventDiscovery.innerHTML = '';
                 currentSingleEventRows = [];
             } else {
                 csvFileName.value = '';
@@ -1230,6 +1351,7 @@
             singleEventTableHead.innerHTML = '';
             singleEventTableBody.innerHTML = '';
             singleEventCards.innerHTML = '';
+            singleEventDiscovery.innerHTML = '';
             downloadResult.style.display = 'none';
             downloadTableHead.innerHTML = '';
             downloadTableBody.innerHTML = '';
@@ -1283,6 +1405,121 @@
             window.setTimeout(function () {
                 singleEventResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 80);
+        }
+
+        function getEventScheduleText(eventData) {
+            const startDate = String(eventData['Event Date'] || '').trim();
+            const startTime = String(eventData['Event Time'] || '').trim();
+            const endDate = String(eventData['Event End Date'] || '').trim();
+            const endTime = String(eventData['Event End Time'] || '').trim();
+            const firstLine = [startDate, startTime].filter(Boolean).join(' · ');
+            const secondLine = [endDate && endDate !== startDate ? endDate : '', endTime].filter(Boolean).join(' · ');
+
+            return [firstLine, secondLine].filter(Boolean).join('  ');
+        }
+
+        function getEventLocationText(eventData) {
+            return [eventData['City'], eventData['State']].filter(Boolean).join(', ');
+        }
+
+        function createEventSummaryCard(eventData, extraClassName = '') {
+            const article = document.createElement('article');
+            const imageLink = document.createElement('a');
+            const image = document.createElement('img');
+            const body = document.createElement('div');
+            const title = document.createElement('h3');
+            const titleLink = document.createElement('a');
+            const meta = document.createElement('p');
+            const location = document.createElement('p');
+            const venue = document.createElement('p');
+            const eventUrl = String(eventData['Event URL'] || '').trim();
+            const imageUrl = normalizeImageUrl(eventData['Event Image']);
+
+            article.className = extraClassName || 'similar-result-card';
+            imageLink.className = 'similar-image-link';
+            imageLink.href = eventUrl || '#';
+            imageLink.target = '_blank';
+            imageLink.rel = 'noopener noreferrer';
+            image.className = 'similar-image';
+            image.src = imageUrl || '';
+            image.alt = eventData['Event Name'] || 'Event image';
+            body.className = 'similar-card-body';
+            title.className = 'similar-card-title';
+            meta.className = 'similar-card-meta';
+            location.className = 'similar-card-location';
+            venue.className = 'similar-card-venue';
+
+            if (!imageUrl) {
+                image.style.display = 'none';
+            }
+
+            titleLink.href = eventUrl || '#';
+            titleLink.target = '_blank';
+            titleLink.rel = 'noopener noreferrer';
+            titleLink.textContent = eventData['Event Name'] || 'Untitled event';
+            title.appendChild(titleLink);
+
+            meta.textContent = getEventScheduleText(eventData) || 'Schedule not available';
+            location.textContent = getEventLocationText(eventData) || 'Location not available';
+            venue.textContent = eventData['Place'] || '';
+
+            imageLink.appendChild(image);
+            body.appendChild(title);
+            body.appendChild(meta);
+            body.appendChild(location);
+            if (venue.textContent) {
+                body.appendChild(venue);
+            }
+
+            article.appendChild(imageLink);
+            article.appendChild(body);
+
+            return article;
+        }
+
+        function renderSingleEventDiscovery(bundles) {
+            singleEventDiscovery.innerHTML = '';
+
+            if (!Array.isArray(bundles) || !bundles.length) {
+                return;
+            }
+
+            bundles.forEach(function (bundle, index) {
+                const group = document.createElement('section');
+                const primaryCard = createEventSummaryCard(bundle.record || {}, 'similar-primary-card');
+                const toggleButton = document.createElement('button');
+                const similarList = document.createElement('div');
+                const similarRows = Array.isArray(bundle.similar_rows) ? bundle.similar_rows : [];
+
+                group.className = 'similar-group';
+                similarList.className = 'similar-results-list';
+                similarList.id = `similarResultsList${index}`;
+
+                group.appendChild(primaryCard);
+
+                if (similarRows.length) {
+                    toggleButton.type = 'button';
+                    toggleButton.className = 'similar-toggle';
+                    toggleButton.textContent = `View ${similarRows.length} similar result${similarRows.length > 1 ? 's' : ''}`;
+                    toggleButton.setAttribute('aria-expanded', 'false');
+                    toggleButton.setAttribute('aria-controls', similarList.id);
+                    toggleButton.addEventListener('click', function () {
+                        const isOpen = similarList.classList.toggle('is-open');
+                        toggleButton.setAttribute('aria-expanded', String(isOpen));
+                        toggleButton.textContent = isOpen
+                            ? `Hide ${similarRows.length} similar result${similarRows.length > 1 ? 's' : ''}`
+                            : `View ${similarRows.length} similar result${similarRows.length > 1 ? 's' : ''}`;
+                    });
+                    group.appendChild(toggleButton);
+
+                    similarRows.forEach(function (row) {
+                        similarList.appendChild(createEventSummaryCard(row, 'similar-result-card'));
+                    });
+                    group.appendChild(similarList);
+                }
+
+                singleEventDiscovery.appendChild(group);
+            });
         }
 
         function renderTableHeader(tableHead) {
@@ -1551,6 +1788,7 @@
             singleEventTableHead.innerHTML = '';
             singleEventTableBody.innerHTML = '';
             singleEventCards.innerHTML = '';
+            singleEventDiscovery.innerHTML = '';
             downloadResult.style.display = 'none';
             downloadTableHead.innerHTML = '';
             downloadTableBody.innerHTML = '';
@@ -1594,6 +1832,7 @@
                     return;
                 }
 
+                renderSingleEventDiscovery(result.data.bundles || []);
                 renderSingleEventTable(result.data.rows || []);
                 setStatus(result.message || 'Single event data loaded.', 'success');
             } catch (error) {
